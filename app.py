@@ -34,15 +34,28 @@ annees_mobile = [str(a) for a in range(2010, 2016)]
 
 # === Filtrage des agrégats ===
 AGREGATS = [
+    # Mondial et groupes financiers
     "World", "IDA total", "IBRD only", "IDA & IBRD total", "IDA only", "IDA blend",
     "OECD members", "High income", "Low income", "Middle income", "Low & middle income",
-    "Upper middle income", "Lower middle income", "Early-demographic dividend",
-    "Late-demographic dividend", "Post-demographic dividend", "Pre-demographic dividend",
-    "Heavily indebted poor countries (HIPC)", "Least developed countries: UN classification",
-    "Fragile and conflict affected situations", "East Asia & Pacific",
-    "South Asia", "Sub-Saharan Africa", "Latin America & Caribbean",
-    "Middle East & North Africa", "Europe & Central Asia",
-    "European Union", "North America", "Arab World", "Euro area"
+    "Upper middle income", "Lower middle income",
+    
+    # Groupes économiques ou de développement
+    "Early-demographic dividend", "Late-demographic dividend", "Post-demographic dividend", "Pre-demographic dividend",
+    "Heavily indebted poor countries (HIPC)",
+    "Least developed countries: UN classification",
+    "Fragile and conflict affected situations",
+    
+    # Régions mondiales et sous-régions
+    "East Asia & Pacific", "East Asia & Pacific (excluding high income)", "East Asia & Pacific (IDA & IBRD countries)",
+    "South Asia", "South Asia (IDA & IBRD)",
+    "Sub-Saharan Africa", "Sub-Saharan Africa (IDA & IBRD countries)", "Sub-Saharan Africa (excluding high income)",
+    "Africa Eastern and Southern", "Africa Western and Central",
+    "Latin America & Caribbean", "Latin America & the Caribbean (IDA & IBRD countries)",
+    "Latin America & Caribbean (excluding high income)",
+    "Middle East & North Africa", "Middle East & North Africa (excluding high income)", "Middle East & North Africa (IDA & IBRD countries)",
+    "Europe & Central Asia", "Europe & Central Asia (IDA & IBRD countries)", "Europe & Central Asia (excluding high income)",
+    "European Union", "Central Europe and the Baltics",
+    "North America", "Arab World", "Euro area"
 ]
 
 def filtrer(df):
