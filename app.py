@@ -74,6 +74,7 @@ chomage[annees] = chomage[annees].fillna(0)
 chomage["Chômage Moyen"] = chomage[annees].mean(axis=1)
 
 # === Top 5 ===
+st.subheader("Partie 1")
 st.subheader("1. Top 5 des pays les plus peuplés")
 top5 = population[["Country Name", "Pop Moyenne"]].sort_values(by="Pop Moyenne", ascending=False).head(5)
 st.dataframe(top5)
@@ -85,6 +86,7 @@ st.plotly_chart(fig1, use_container_width=True)
 
 # === Évolution PIB ===
 st.markdown("---")
+st.subheader("Partie 2")
 st.subheader("3. 📈 Évolution du PIB pour quelques pays")
 pays_selectionnes = ["China", "United States", "India"]
 fig2, ax = plt.subplots(figsize=(10, 6))
@@ -126,6 +128,7 @@ df_merge = df_merge.merge(mobile[["Country Name", "Mobile Moyenne"]], on="Countr
 df_merge = df_merge.merge(chomage[["Country Name", "Chômage Moyen"]], on="Country Name")
 df_merge["PIB par Habitant"] = df_merge["PIB Total"] / df_merge["Pop Moyenne"]
 
+st.subheader("Partie 3")
 st.subheader("6. 📡 Corrélation Téléphonie - PIB/Hab")
 fig4, ax = plt.subplots(figsize=(10, 5))
 sns.scatterplot(data=df_merge, x="Mobile Moyenne", y="PIB par Habitant", hue="Chômage Moyen", palette="coolwarm", size="Chômage Moyen", ax=ax)
@@ -139,6 +142,7 @@ st.write(f"8. 📈 Corrélation : **{df_merge[['Mobile Moyenne', 'PIB par Habita
 
 # === Partie 4 : Analyse synthétique ===
 st.markdown("---")
+st.subheader("Partie 4")
 st.subheader("9. 🔄 Analyse synthétique par région")
 region_map = {
     "Congo, Rep.": "Afrique centrale", "France": "Europe", "United States": "Amérique du Nord",
