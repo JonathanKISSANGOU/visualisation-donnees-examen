@@ -139,43 +139,168 @@ st.dataframe(df_merge[(df_merge["Mobile Moyenne"] > 100) & (df_merge["Chômage M
 cor_val = df_merge[['Mobile Moyenne', 'PIB par Habitant']].corr().iloc[0, 1]
 st.info(f"8️⃣ **Corrélation mobile vs PIB/hab : {cor_val:.2f}**")
 
-# === PARTIE 4 : Analyse synthétique ===
-st.markdown("---")
-st.markdown("## 🔄 Partie 4 : Analyse régionale et synthèse")
+# === Données régionales uniquement ===
+region_names = [
+    "East Asia & Pacific", "South Asia", "Sub-Saharan Africa",
+    "Africa Eastern and Southern", "Africa Western and Central",
+    "Latin America & Caribbean", "Middle East & North Africa",
+    "Europe & Central Asia", "North America", "Arab World"
+]
 
-region_map = {
-    "Congo, Rep.": "Afrique centrale", "France": "Europe", "United States": "Amérique du Nord",
-    "China": "Asie", "India": "Asie", "Germany": "Europe", "Nigeria": "Afrique de l'Ouest",
-    "Brazil": "Amérique latine", "South Africa": "Afrique australe", "Canada": "Amérique du Nord"
+# Rechargement des fichiers non filtrés
+pop_all, pib_all, chom_all, mob_all = charger_donnees()
+
+# === Ajout manuel des régions pour les pays présents dans mobile.xlsx ===
+region_map_mobile = {
+    "Argentina": "Latin America & Caribbean",
+    "Australia": "East Asia & Pacific",
+    "Brazil": "Latin America & Caribbean",
+    "China": "East Asia & Pacific",
+    "France": "Europe & Central Asia",
+    "Germany": "Europe & Central Asia",
+    "India": "South Asia",
+    "Indonesia": "East Asia & Pacific",
+    "Italy": "Europe & Central Asia",
+    "Japan": "East Asia & Pacific",
+    "Korea, Rep.": "East Asia & Pacific",
+    "Mexico": "Latin America & Caribbean",
+    "Netherlands": "Europe & Central Asia",
+    "Russian Federation": "Europe & Central Asia",
+    "Saudi Arabia": "Middle East & North Africa",
+    "Spain": "Europe & Central Asia",
+    "Switzerland": "Europe & Central Asia",
+    "Turkiye": "Europe & Central Asia",
+    "United Kingdom": "Europe & Central Asia",
+    "United States": "North America",
+    "Sudan": "Sub-Saharan Africa"
 }
 
-df_region = df_merge.copy()
-df_region["Region"] = df_region["Country Name"].map(region_map)
-df_region.dropna(subset=["Region"], inplace=True)
+mobile["Region"] = mobile["Country Name"].map(region_map_mobile)
 
+df_region_mobile = mobile.dropna(subset=["Region"]).copy()
+df_region_mobile["Mobile Moyenne"] = df_region_mobile[annees_mobile].mean(axis=1)
+
+# Calcul de la moyenne mobile par région
+mobile_region = df_region_mobile.groupby("Region")["Mobile Moyenne"].mean().reset_index()
+
+# Filtrer uniquement les régions de la liste
+pop_region = pop_all[pop_all["Country Name"].isin(region_names)].copy()
+pib_region = pib_all[pib_all["Country Name"].isin(region_names)].copy()
+chom_region = chom_all[chom_all["Country Name"].isin(region_names)].copy()
+mob_region = mobile["Region"]
+
+# Calculs des moyennes
+annees = [str(a) for a in range(2010, 2023)]
+annees_mobile = [str(a) for a in range(2010, 2016)]
+
+pop_region["Pop Moyenne"] = pop_region[annees].mean(axis=1)
+pib_region["PIB Total"] = pib_region[annees].mean(axis=1)
+chom_region[annees] = chom_region[annees].fillna(0)
+chom_region["Chômage Moyen"] = chom_region[annees].mean(axis=1)
+
+# Fusion finale
+# df_region contient déjà PIB, Pop, Chômage avec colonne 'Region'
+df_region = pib_region[["Country Name", "PIB Total"]].merge(
+    pop_region[["Country Name", "Pop Moyenne"]], on="Country Name")
+df_region = df_region.merge(chom_region[["Country Name", "Chômage Moyen"]], on="Country Name")
+df_region.rename(columns={"Country Name": "Region"}, inplace=True)
+df_region["PIB par Habitant"] = df_region["PIB Total"] / df_region["Pop Moyenne"]
+
+# Ajouter la moyenne Mobile par région (si elle existe)
+df_region = df_region.merge(mobile_region, on="Region", how="left")
+
+
+
+# === PARTIE 4 : Analyse synthétique par région (Banque Mondiale) ===
+st.markdown("---")
+st.markdown("## 🔄 Partie 4 : Analyse synthétique par région (agrégats Banque Mondiale)")
+
+# Liste officielle des régions à analyser
+region_names = [
+    "East Asia & Pacific", "South Asia", "Sub-Saharan Africa",
+    "Africa Eastern and Southern", "Africa Western and Central",
+    "Latin America & Caribbean", "Middle East & North Africa",
+    "Europe & Central Asia", "North America", "Arab World"
+]
+
+# Filtrer les régions dans les fichiers originaux
+pop_region = pop_all[pop_all["Country Name"].isin(region_names)].copy()
+pib_region = pib_all[pib_all["Country Name"].isin(region_names)].copy()
+chom_region = chom_all[chom_all["Country Name"].isin(region_names)].copy()
+
+# Vérification que les régions sont bien présentes
+regions_absentes = {
+    "population.xlsx": set(region_names) - set(pop_region["Country Name"]),
+    "pib.xlsx": set(region_names) - set(pib_region["Country Name"]),
+    "chomage.xlsx": set(region_names) - set(chom_region["Country Name"])
+}
+for fichier, manquantes in regions_absentes.items():
+    if manquantes:
+        st.error(f"❌ Régions manquantes dans {fichier} : {manquantes}")
+        st.stop()
+
+# Calcul des indicateurs pour les régions (sauf mobile)
+pop_region["Pop Moyenne"] = pop_region[annees].mean(axis=1)
+pib_region["PIB Total"] = pib_region[annees].mean(axis=1)
+chom_region[annees] = chom_region[annees].fillna(0)
+chom_region["Chômage Moyen"] = chom_region[annees].mean(axis=1)
+
+# Fusion des données
+df_region = pib_region[["Country Name", "PIB Total"]].merge(
+    pop_region[["Country Name", "Pop Moyenne"]], on="Country Name").merge(
+    chom_region[["Country Name", "Chômage Moyen"]], on="Country Name")
+df_region.rename(columns={"Country Name": "Region"}, inplace=True)
+df_region["PIB par Habitant"] = df_region["PIB Total"] / df_region["Pop Moyenne"]
+
+# Récupérer les moyennes mobile déjà calculées avec region_map_mobile
+mobile_region = mobile.dropna(subset=["Region"]).groupby("Region")["Mobile Moyenne"].mean().reset_index()
+df_region = df_region.merge(mobile_region, on="Region", how="left")  # fusion souple
+
+st.markdown("### 1️⃣0️⃣ 🗺️ Carte du monde par PIB moyen (2010–2022)")
+
+# Carte avec les données pays (déjà traitées au début)
+fig_map_pib = px.choropleth(
+    pib,
+    locations="Country Code",
+    color="PIB Total",
+    hover_name="Country Name",
+    color_continuous_scale="Viridis",
+    title="Carte du monde - PIB moyen par pays"
+)
+fig_map_pib.update_layout(margin={"r":0,"t":30,"l":0,"b":0})
+st.plotly_chart(fig_map_pib, use_container_width=True)
+
+# Sélection interactive
 col1, col2 = st.columns(2)
 region1 = col1.selectbox("🌍 Choisissez la région 1", df_region["Region"].unique())
 region2 = col2.selectbox("🌍 Choisissez la région 2", df_region["Region"].unique(), index=1)
 
-st.markdown("### 1️⃣0️⃣ Comparaison moyenne par région")
+# Comparaison des indicateurs
+st.markdown("### 1️⃣1️⃣ Comparaison des indicateurs moyens")
 comparaison = df_region[df_region["Region"].isin([region1, region2])]
-st.bar_chart(comparaison.groupby("Region")[["PIB Total", "Pop Moyenne", "Mobile Moyenne"]].mean())
+st.bar_chart(comparaison.set_index("Region")[["PIB Total", "Pop Moyenne", "Mobile Moyenne"]])
 
-st.markdown("### 1️⃣1️⃣ Évolution du chômage par région")
+# === Évolution du chômage par région ===
+st.markdown("### 1️⃣2️⃣ Évolution du chômage moyen par région")
+
 fig5, ax = plt.subplots(figsize=(10, 6))
+
 for reg in [region1, region2]:
-    pays_reg = [k for k, v in region_map.items() if v == reg]
-    sous_df = chomage[chomage["Country Name"].isin(pays_reg)]
-    if not sous_df.empty:
-        ax.plot(annees, sous_df[annees].mean(), label=reg)
-ax.set_title("Évolution du chômage")
+    ligne = chom_region[chom_region["Country Name"] == reg]
+    if not ligne.empty:
+        ax.plot(annees, ligne[annees].values.flatten(), label=reg)
+
+ax.set_title("Évolution du chômage moyen par région (2010–2022)")
+ax.set_xlabel("Année")
+ax.set_ylabel("Taux de chômage (%)")
 ax.legend()
 ax.grid(True)
 st.pyplot(fig5)
 
-st.markdown("### 1️⃣2️⃣ Corrélation entre indicateurs régionaux")
+# Corrélation
+st.markdown("### 1️⃣3️⃣ Corrélation entre indicateurs")
 corr = df_region[["PIB Total", "Pop Moyenne", "Mobile Moyenne", "Chômage Moyen"]].corr()
-fig6, ax = plt.subplots()
+fig_corr, ax = plt.subplots()
 sns.heatmap(corr, annot=True, cmap="YlGnBu", ax=ax)
-ax.set_title("Corrélation entre indicateurs")
-st.pyplot(fig6)
+ax.set_title("Corrélation entre indicateurs régionaux")
+st.pyplot(fig_corr)
